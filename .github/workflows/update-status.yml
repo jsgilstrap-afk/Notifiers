@@ -1,1 +1,32 @@
+name: Update Braum's Status
 
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs at the top of every hour
+  workflow_dispatch: # Allows you to manually trigger it via the Actions tab
+
+permissions:
+  contents: write # Allows the action to commit the JSON file back to your repo
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Aggregator Script
+        run: node aggregator.js
+
+      - name: Commit and Push Status
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add status.json
+          git commit -m "Auto-update Braum's status" || exit 0
+          git push
