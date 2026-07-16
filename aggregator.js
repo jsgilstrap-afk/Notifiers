@@ -2,7 +2,7 @@ const fs = require('fs');
 
 // Configuration
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY; 
-const PLACE_ID = ChIJDxf9m3CRtocRq-j1QkyT64c; // <-- Replace this with your exact Google Place ID
+const PLACE_ID = 'ChIJDxf9m3CRtocRq-j1QkyT64c'; // <-- Replace this with your exact Google Place ID
 
 async function updateStatus() {
     try {
