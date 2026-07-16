@@ -2,11 +2,11 @@ name: Update Braum's Status
 
 on:
   schedule:
-    - cron: '0 * * * *' # Runs at the top of every hour
-  workflow_dispatch: # Allows you to manually trigger it via the Actions tab
+    - cron: '0 * * * *' 
+  workflow_dispatch: 
 
 permissions:
-  contents: write # Allows the action to commit the JSON file back to your repo
+  contents: write 
 
 jobs:
   aggregate:
@@ -18,9 +18,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Run Aggregator Script
+        env: # Injects your secure key into the Node environment
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
         run: node aggregator.js
 
       - name: Commit and Push Status
