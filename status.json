@@ -1,4 +1,4 @@
 {
   "status": "ERROR",
-  "error": "Unexpected token '<', \"<body clas\"... is not valid JSON"
+  "error": "Reddit rejected the request with status code: 403"
 }
