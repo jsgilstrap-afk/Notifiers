@@ -2,7 +2,7 @@ const fs = require('fs');
 
 // Configuration
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY; 
-const PLACE_ID = 'ChIJDxf9m3CRtocRq-j1QkyT64c'; // <-- Replace this with your exact Google Place ID
+const PLACE_ID = 'ChIJDxf9m3CRtocRq-j1QkyT64c'; 
 
 async function updateStatus() {
     try {
@@ -16,37 +16,38 @@ async function updateStatus() {
         if (API_KEY && PLACE_ID !== 'PLACE_ID_HERE') {
             console.log("Querying Google Places API (New)...");
             
-            // The New API endpoint structure
             const googleUrl = `https://places.googleapis.com/v1/places/${PLACE_ID}`;
             
-            // The New API requires headers instead of URL parameters
             const googleRes = await fetch(googleUrl, {
                 headers: {
                     'X-Goog-Api-Key': API_KEY,
-                    'X-Goog-FieldMask': 'businessStatus' // Explicitly requesting only the status field
+                    'X-Goog-FieldMask': 'businessStatus'
                 }
             });
             
             if (googleRes.ok) {
                 const googleData = await googleRes.json();
                 
-                // The New API uses camelCase (businessStatus)
+                // Debugging: Print raw data to logs so we can see the exact API response
+                console.log("RAW GOOGLE DATA:", JSON.stringify(googleData, null, 2));
+                
                 if (googleData.businessStatus) {
                     googleStatus = googleData.businessStatus;
-                    console.log(`Google Maps Status: ${googleStatus}`);
+                    console.log(`Google Maps Status Detected: ${googleStatus}`);
                     
-                    // The Ultimate Override Logic
                     if (googleStatus === "OPERATIONAL") {
-                        openScore += 1000; // Guaranteed to force an OPEN status
+                        openScore += 1000;
                     } else if (googleStatus === "CLOSED_TEMPORARILY") {
-                        closedScore += 50; // Heavy weighting toward CLOSED
+                        closedScore += 500; // Increased weight to ensure it overrides everything
+                    } else if (googleStatus === "CLOSED_PERMANENTLY") {
+                        closedScore += 1000;
                     }
+                } else {
+                    console.warn("No businessStatus found in Google response.");
                 }
             } else {
                 console.warn(`Google API failed with status: ${googleRes.status}`);
             }
-        } else {
-            console.log("Skipping Google API: Missing Key or Place ID.");
         }
 
         // 2. SECONDARY INTELLIGENCE: Local Tulsa RSS Feeds
@@ -67,14 +68,10 @@ async function updateStatus() {
                 
                 if (feedRes.ok) {
                     const xmlText = await feedRes.text();
-                    
-                    // Simple regex to isolate titles and descriptions from the XML feed
                     const contentMatches = xmlText.match(/<(title|description)>(.*?)<\/\1>/gi) || [];
                     
                     contentMatches.forEach(tag => {
                         const lowerTag = tag.toLowerCase();
-                        
-                        // Only score articles specifically mentioning Braum's and the 101st street area
                         if ((lowerTag.includes("braum's") || lowerTag.includes("braums")) && 
                             (lowerTag.includes("101") || lowerTag.includes("101st"))) {
                             
