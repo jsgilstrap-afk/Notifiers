@@ -5,8 +5,18 @@ async function updateStatus() {
         console.log("Fetching latest posts from r/Tulsa...");
         const query = encodeURIComponent("Braum's 101st OR Braums 2825 OR Braums 101");
         
-        // Fetch directly using Node's native fetch API
-        const response = await fetch(`https://www.reddit.com/r/tulsa/search.json?q=${query}&restrict_sr=on&sort=new`);
+        // Added a custom User-Agent to prevent Reddit from blocking the automated request
+        const response = await fetch(`https://www.reddit.com/r/tulsa/search.json?q=${query}&restrict_sr=on&sort=new`, {
+            headers: {
+                'User-Agent': 'BraumsAggregatorBot/1.0 (Running on GitHub Actions)'
+            }
+        });
+
+        // Catch non-200 responses so we know exactly why it failed
+        if (!response.ok) {
+            throw new Error(`Reddit rejected the request with status code: ${response.status}`);
+        }
+
         const data = await response.json();
         
         let openScore = 0;
