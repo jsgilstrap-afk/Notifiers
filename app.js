@@ -11,6 +11,7 @@ async function checkStatus() {
         
         statusText.innerText = data.status;
         
+        // Update styling and sub-text based on the status
         if (data.status === 'OPEN') {
             document.body.style.backgroundColor = '#28a745'; // Green
             document.body.style.color = 'white';
@@ -23,18 +24,25 @@ async function checkStatus() {
             document.body.style.backgroundColor = '#ffc107'; // Yellow
             document.body.style.color = '#333'; 
             subText.innerText = `Mixed signals detected. Keep an eye out.`;
+        } else if (data.status === 'ERROR') {
+            document.body.style.backgroundColor = '#343a40'; // Dark Gray
+            document.body.style.color = 'white';
+            // NEW LOGIC: Print the exact forensic error from the backend
+            subText.innerText = `Backend Failure: ${data.error}`;
         } else {
             document.body.style.backgroundColor = '#6c757d'; // Gray
             document.body.style.color = 'white';
             subText.innerText = `Not enough recent data to determine status.`;
         }
 
+        // Display the timestamp from the backend
         if (data.lastChecked) {
             const date = new Date(data.lastChecked);
             timestampText.innerText = `Last checked by GitHub Actions: ${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`;
         }
         
     } catch (error) {
+        // This catch block only triggers if the status.json file itself fails to load or is completely missing
         statusText.innerText = 'ERROR';
         document.body.style.backgroundColor = '#343a40'; 
         subText.innerText = 'Could not load status data. The GitHub Action may not have run yet.';
