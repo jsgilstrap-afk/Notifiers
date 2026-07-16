@@ -1,9 +1,9 @@
 {
-  "status": "UNKNOWN",
+  "status": "CLOSED",
   "confidence": {
     "openScore": 0,
-    "closedScore": 0,
-    "googleStatus": "UNAVAILABLE"
+    "closedScore": 500,
+    "googleStatus": "CLOSED_TEMPORARILY"
   },
-  "lastChecked": "2026-07-16T02:19:21.387Z"
+  "lastChecked": "2026-07-16T02:20:41.397Z"
 }
