@@ -18,19 +18,21 @@ async function updateStatus() {
             
             const googleUrl = `https://places.googleapis.com/v1/places/${PLACE_ID}`;
             
+            // Using '*' as the FieldMask to request ALL data for debugging
             const googleRes = await fetch(googleUrl, {
                 headers: {
                     'X-Goog-Api-Key': API_KEY,
-                    'X-Goog-FieldMask': 'businessStatus'
+                    'X-Goog-FieldMask': '*' 
                 }
             });
             
             if (googleRes.ok) {
                 const googleData = await googleRes.json();
                 
-                // Debugging: Print raw data to logs so we can see the exact API response
+                // Debugging: Print everything Google sends back
                 console.log("RAW GOOGLE DATA:", JSON.stringify(googleData, null, 2));
                 
+                // Check for businessStatus in the response
                 if (googleData.businessStatus) {
                     googleStatus = googleData.businessStatus;
                     console.log(`Google Maps Status Detected: ${googleStatus}`);
@@ -38,12 +40,12 @@ async function updateStatus() {
                     if (googleStatus === "OPERATIONAL") {
                         openScore += 1000;
                     } else if (googleStatus === "CLOSED_TEMPORARILY") {
-                        closedScore += 500; // Increased weight to ensure it overrides everything
+                        closedScore += 500;
                     } else if (googleStatus === "CLOSED_PERMANENTLY") {
                         closedScore += 1000;
                     }
                 } else {
-                    console.warn("No businessStatus found in Google response.");
+                    console.warn("No businessStatus found in the full Google response.");
                 }
             } else {
                 console.warn(`Google API failed with status: ${googleRes.status}`);
