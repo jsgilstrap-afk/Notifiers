@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braum's 101st Status</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            transition: background-color 0.5s ease;
+            text-align: center;
+            background-color: #333; 
+        }
+        #status-container {
+            padding: 3rem;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 6rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        p {
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            opacity: 0.9;
+        }
+        #timestamp {
+            font-size: 1rem;
+            margin-top: 2rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="status-container">
+        <h1 id="status-text">LOADING...</h1>
+        <p id="sub-text">Fetching latest data...</p>
+        <p id="timestamp"></p>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
