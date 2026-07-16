@@ -2,7 +2,7 @@ const fs = require('fs');
 
 // Configuration
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY; 
-const PLACE_ID = ChIJDxf9m3CRtocRq-j1QkyT64c; // <-- Replace this with the ID from Google's Place ID Finder
+const PLACE_ID = ChIJDxf9m3CRtocRq-j1QkyT64c; // <-- Replace this with your exact Google Place ID
 
 async function updateStatus() {
     try {
@@ -12,16 +12,27 @@ async function updateStatus() {
         let closedScore = 0;
         let googleStatus = "UNAVAILABLE";
 
-        // 1. PRIMARY INTELLIGENCE: Google Places API
+        // 1. PRIMARY INTELLIGENCE: Google Places API (New)
         if (API_KEY && PLACE_ID !== 'PLACE_ID_HERE') {
-            console.log("Querying Google Places API...");
-            const googleUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${PLACE_ID}&fields=business_status&key=${API_KEY}`;
-            const googleRes = await fetch(googleUrl);
+            console.log("Querying Google Places API (New)...");
+            
+            // The New API endpoint structure
+            const googleUrl = `https://places.googleapis.com/v1/places/${PLACE_ID}`;
+            
+            // The New API requires headers instead of URL parameters
+            const googleRes = await fetch(googleUrl, {
+                headers: {
+                    'X-Goog-Api-Key': API_KEY,
+                    'X-Goog-FieldMask': 'businessStatus' // Explicitly requesting only the status field
+                }
+            });
             
             if (googleRes.ok) {
                 const googleData = await googleRes.json();
-                if (googleData.result && googleData.result.business_status) {
-                    googleStatus = googleData.result.business_status;
+                
+                // The New API uses camelCase (businessStatus)
+                if (googleData.businessStatus) {
+                    googleStatus = googleData.businessStatus;
                     console.log(`Google Maps Status: ${googleStatus}`);
                     
                     // The Ultimate Override Logic
