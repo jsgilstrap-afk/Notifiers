@@ -1,44 +1,88 @@
 const fs = require('fs');
 
+// Configuration
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY; 
+const PLACE_ID = 'PLACE_ID_HERE'; // <-- Replace this with the ID from Google's Place ID Finder
+
 async function updateStatus() {
     try {
-        console.log("Fetching latest posts from r/Tulsa...");
-        const query = encodeURIComponent("Braum's 101st OR Braums 2825 OR Braums 101");
-        
-        // Added a custom User-Agent to prevent Reddit from blocking the automated request
-        const response = await fetch(`https://www.reddit.com/r/tulsa/search.json?q=${query}&restrict_sr=on&sort=new`, {
-            headers: {
-                'User-Agent': 'BraumsAggregatorBot/1.0 (Running on GitHub Actions)'
-            }
-        });
-
-        // Catch non-200 responses so we know exactly why it failed
-        if (!response.ok) {
-            throw new Error(`Reddit rejected the request with status code: ${response.status}`);
-        }
-
-        const data = await response.json();
+        console.log("Starting multi-source aggregation...");
         
         let openScore = 0;
         let closedScore = 0;
-        
+        let googleStatus = "UNAVAILABLE";
+
+        // 1. PRIMARY INTELLIGENCE: Google Places API
+        if (API_KEY && PLACE_ID !== 'PLACE_ID_HERE') {
+            console.log("Querying Google Places API...");
+            const googleUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${PLACE_ID}&fields=business_status&key=${API_KEY}`;
+            const googleRes = await fetch(googleUrl);
+            
+            if (googleRes.ok) {
+                const googleData = await googleRes.json();
+                if (googleData.result && googleData.result.business_status) {
+                    googleStatus = googleData.result.business_status;
+                    console.log(`Google Maps Status: ${googleStatus}`);
+                    
+                    // The Ultimate Override Logic
+                    if (googleStatus === "OPERATIONAL") {
+                        openScore += 1000; // Guaranteed to force an OPEN status
+                    } else if (googleStatus === "CLOSED_TEMPORARILY") {
+                        closedScore += 50; // Heavy weighting toward CLOSED
+                    }
+                }
+            } else {
+                console.warn(`Google API failed with status: ${googleRes.status}`);
+            }
+        } else {
+            console.log("Skipping Google API: Missing Key or Place ID.");
+        }
+
+        // 2. SECONDARY INTELLIGENCE: Local Tulsa RSS Feeds
+        console.log("Scanning local news RSS feeds...");
+        const rssFeeds = [
+            'https://www.newson6.com/arc/outboundfeeds/rss/?sort=display_date:desc', 
+            'https://ktul.com/news/local/rss'
+        ];
+
         const openKeywords = ['open', 'eating there', 'line', 'inside', 'finally', 'reopened', 'went today', 'grand opening'];
         const closedKeywords = ['closed', 'remodeling', 'fences', 'construction', 'not yet', 'soon', 'waiting', 'fenced'];
-        
-        if (data.data && data.data.children) {
-            data.data.children.forEach(post => {
-                const text = (post.data.title + " " + post.data.selftext).toLowerCase();
-                
-                openKeywords.forEach(keyword => {
-                    if (text.includes(keyword)) openScore += 1;
+
+        for (const feed of rssFeeds) {
+            try {
+                const feedRes = await fetch(feed, {
+                    headers: { 'User-Agent': 'BraumsAggregatorBot/1.0 (GitHub Actions)' }
                 });
                 
-                closedKeywords.forEach(keyword => {
-                    if (text.includes(keyword)) closedScore += 1;
-                });
-            });
+                if (feedRes.ok) {
+                    const xmlText = await feedRes.text();
+                    
+                    // Simple regex to isolate titles and descriptions from the XML feed
+                    const contentMatches = xmlText.match(/<(title|description)>(.*?)<\/\1>/gi) || [];
+                    
+                    contentMatches.forEach(tag => {
+                        const lowerTag = tag.toLowerCase();
+                        
+                        // Only score articles specifically mentioning Braum's and the 101st street area
+                        if ((lowerTag.includes("braum's") || lowerTag.includes("braums")) && 
+                            (lowerTag.includes("101") || lowerTag.includes("101st"))) {
+                            
+                            openKeywords.forEach(keyword => {
+                                if (lowerTag.includes(keyword)) openScore += 1;
+                            });
+                            
+                            closedKeywords.forEach(keyword => {
+                                if (lowerTag.includes(keyword)) closedScore += 1;
+                            });
+                        }
+                    });
+                }
+            } catch (rssError) {
+                console.error(`Failed to parse feed ${feed}:`, rssError.message);
+            }
         }
-        
+
+        // 3. FINAL LOGIC EVALUATION
         let status = "UNKNOWN";
         if (openScore === 0 && closedScore === 0) {
             status = "UNKNOWN"; 
@@ -52,16 +96,15 @@ async function updateStatus() {
         
         const output = { 
             status: status, 
-            confidence: { openScore, closedScore },
+            confidence: { openScore, closedScore, googleStatus },
             lastChecked: new Date().toISOString()
         };
 
-        // Write the result directly to a static JSON file in the repository
         fs.writeFileSync('status.json', JSON.stringify(output, null, 2));
         console.log("Successfully wrote status.json:", output);
         
     } catch (error) {
-        console.error("Error aggregating data:", error);
+        console.error("Error during aggregation process:", error);
         const errorOutput = { status: "ERROR", error: error.message };
         fs.writeFileSync('status.json', JSON.stringify(errorOutput, null, 2));
     }
