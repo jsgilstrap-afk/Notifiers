@@ -2,7 +2,8 @@ const fs = require('fs');
 
 // Configuration
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY; 
-const PLACE_ID = 'ChIJDxf9m3CRtocRq-j1QkyT64c'; 
+// UPDATED: This is now the specific Place ID for the Braum's store
+const PLACE_ID = 'ChIJ8ZSCnnCRtocRA0AxkByXoIo'; 
 
 async function updateStatus() {
     try {
@@ -13,26 +14,21 @@ async function updateStatus() {
         let googleStatus = "UNAVAILABLE";
 
         // 1. PRIMARY INTELLIGENCE: Google Places API (New)
-        if (API_KEY && PLACE_ID !== 'PLACE_ID_HERE') {
+        if (API_KEY) {
             console.log("Querying Google Places API (New)...");
             
             const googleUrl = `https://places.googleapis.com/v1/places/${PLACE_ID}`;
             
-            // Using '*' as the FieldMask to request ALL data for debugging
             const googleRes = await fetch(googleUrl, {
                 headers: {
                     'X-Goog-Api-Key': API_KEY,
-                    'X-Goog-FieldMask': '*' 
+                    'X-Goog-FieldMask': 'businessStatus' 
                 }
             });
             
             if (googleRes.ok) {
                 const googleData = await googleRes.json();
                 
-                // Debugging: Print everything Google sends back
-                console.log("RAW GOOGLE DATA:", JSON.stringify(googleData, null, 2));
-                
-                // Check for businessStatus in the response
                 if (googleData.businessStatus) {
                     googleStatus = googleData.businessStatus;
                     console.log(`Google Maps Status Detected: ${googleStatus}`);
@@ -44,8 +40,6 @@ async function updateStatus() {
                     } else if (googleStatus === "CLOSED_PERMANENTLY") {
                         closedScore += 1000;
                     }
-                } else {
-                    console.warn("No businessStatus found in the full Google response.");
                 }
             } else {
                 console.warn(`Google API failed with status: ${googleRes.status}`);
@@ -53,7 +47,7 @@ async function updateStatus() {
         }
 
         // 2. SECONDARY INTELLIGENCE: Local Tulsa RSS Feeds
-        console.log("Scanning local news RSS feeds...");
+        // ... (Keep the RSS logic exactly the same as before) ...
         const rssFeeds = [
             'https://www.newson6.com/arc/outboundfeeds/rss/?sort=display_date:desc', 
             'https://ktul.com/news/local/rss'
