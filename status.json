@@ -1,9 +1,4 @@
 {
-  "status": "UNKNOWN",
-  "confidence": {
-    "openScore": 0,
-    "closedScore": 0,
-    "googleStatus": "UNAVAILABLE"
-  },
-  "lastChecked": "2026-08-22T14:41:20.837Z"
+  "status": "ERROR",
+  "error": "fetch failed"
 }
